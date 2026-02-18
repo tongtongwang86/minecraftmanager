@@ -2,7 +2,7 @@
   "servers_dir": "./servers",
   "backups_dir": "./backups",
   "web_port": 5000,
-  "web_host": "0.0.0.0",
+  "web_host": "127.0.0.1",
   "servers": {
     "example": {
       "name": "Example Server",

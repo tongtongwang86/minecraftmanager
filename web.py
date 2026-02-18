@@ -14,7 +14,8 @@ manager = ServerManager()
 
 # Load configuration
 config = manager.load_config()
-web_host = config.get('web_host', '0.0.0.0')
+# Default to localhost for security - can be changed in config.json
+web_host = config.get('web_host', '127.0.0.1')
 web_port = config.get('web_port', 5000)
 
 

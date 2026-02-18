@@ -193,9 +193,10 @@ minecraftmanager/
 
 ## Security Notes
 
-- The web interface binds to 0.0.0.0 by default. Use a firewall or change web_host in config.json to restrict access
+- The web interface binds to 127.0.0.1 (localhost) by default for security. To allow remote access, change `web_host` to `0.0.0.0` in config.json and ensure you have proper firewall rules in place
 - Server console logs may contain sensitive information
 - Backup files are stored locally and are not encrypted
+- Consider using a reverse proxy (nginx/apache) with authentication for production deployments
 
 ## Troubleshooting
 

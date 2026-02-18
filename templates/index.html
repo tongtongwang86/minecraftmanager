@@ -462,11 +462,11 @@
             
             updateConsole();
             
-            // Auto-refresh console every 2 seconds
+            // Auto-refresh console every 5 seconds to reduce load
             if (consoleInterval) {
                 clearInterval(consoleInterval);
             }
-            consoleInterval = setInterval(updateConsole, 2000);
+            consoleInterval = setInterval(updateConsole, 5000);
         }
         
         function updateConsole() {

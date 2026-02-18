@@ -218,7 +218,7 @@ class ServerManager:
                 status['pid'] = pid
                 status['cpu_percent'] = proc.cpu_percent(interval=0.1)
                 status['memory_mb'] = proc.memory_info().rss / 1024 / 1024
-            except:
+            except (ValueError, psutil.NoSuchProcess, FileNotFoundError):
                 pass
         
         return status

@@ -1,0 +1,190 @@
+#!/usr/bin/env python3
+"""
+Minecraft Server Manager - CLI Tool
+Command-line interface for managing Minecraft servers
+"""
+
+import argparse
+import sys
+from server_manager import ServerManager
+from tabulate import tabulate
+
+
+def cmd_list(args, manager):
+    """List all configured servers"""
+    servers = manager.get_servers()
+    
+    if not servers:
+        print("No servers configured.")
+        return
+    
+    table_data = []
+    for server_id, server in servers.items():
+        status = manager.get_server_status(server_id)
+        running = "✓ Running" if status['running'] else "✗ Stopped"
+        
+        row = [
+            server_id,
+            server.get('name', server_id),
+            running,
+            server.get('port', 'N/A')
+        ]
+        
+        if status['running'] and 'memory_mb' in status:
+            row.append(f"{status['memory_mb']:.1f} MB")
+        else:
+            row.append("-")
+        
+        table_data.append(row)
+    
+    headers = ['ID', 'Name', 'Status', 'Port', 'Memory']
+    print(tabulate(table_data, headers=headers, tablefmt='grid'))
+
+
+def cmd_start(args, manager):
+    """Start a server"""
+    success, message = manager.start_server(args.server_id)
+    print(message)
+    return 0 if success else 1
+
+
+def cmd_stop(args, manager):
+    """Stop a server"""
+    success, message = manager.stop_server(args.server_id)
+    print(message)
+    return 0 if success else 1
+
+
+def cmd_status(args, manager):
+    """Show detailed status of a server"""
+    status = manager.get_server_status(args.server_id)
+    
+    if not status:
+        print(f"Server '{args.server_id}' not found")
+        return 1
+    
+    print(f"\nServer: {status['name']}")
+    print(f"ID: {status['id']}")
+    print(f"Status: {'Running' if status['running'] else 'Stopped'}")
+    print(f"Path: {status['path']}")
+    print(f"Port: {status['port']}")
+    
+    if status['running']:
+        print(f"PID: {status.get('pid', 'N/A')}")
+        print(f"CPU: {status.get('cpu_percent', 0):.1f}%")
+        print(f"Memory: {status.get('memory_mb', 0):.1f} MB")
+    
+    return 0
+
+
+def cmd_console(args, manager):
+    """View console output of a server"""
+    output = manager.get_console_output(args.server_id, lines=args.lines)
+    
+    if output is None:
+        print(f"Server '{args.server_id}' not found")
+        return 1
+    
+    if not output:
+        print(f"No console output available for '{args.server_id}'")
+        return 0
+    
+    print(f"\n=== Console output for '{args.server_id}' (last {args.lines} lines) ===\n")
+    for line in output:
+        print(line, end='')
+    
+    return 0
+
+
+def cmd_backup(args, manager):
+    """Create a backup of a server"""
+    success, message = manager.create_backup(args.server_id)
+    print(message)
+    return 0 if success else 1
+
+
+def cmd_backups(args, manager):
+    """List backups"""
+    backups = manager.list_backups(args.server_id if hasattr(args, 'server_id') else None)
+    
+    if not backups:
+        print("No backups found.")
+        return 0
+    
+    table_data = []
+    for backup in backups:
+        table_data.append([
+            backup['name'],
+            backup['created'],
+            f"{backup['size_mb']:.1f} MB"
+        ])
+    
+    headers = ['Backup Name', 'Created', 'Size']
+    print(tabulate(table_data, headers=headers, tablefmt='grid'))
+    
+    return 0
+
+
+def main():
+    """Main CLI entry point"""
+    parser = argparse.ArgumentParser(
+        description='Minecraft Server Manager - CLI Tool',
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    
+    parser.add_argument('-c', '--config', default='config.json',
+                       help='Path to configuration file (default: config.json)')
+    
+    subparsers = parser.add_subparsers(dest='command', help='Available commands')
+    
+    # List command
+    parser_list = subparsers.add_parser('list', help='List all servers')
+    parser_list.set_defaults(func=cmd_list)
+    
+    # Start command
+    parser_start = subparsers.add_parser('start', help='Start a server')
+    parser_start.add_argument('server_id', help='Server ID to start')
+    parser_start.set_defaults(func=cmd_start)
+    
+    # Stop command
+    parser_stop = subparsers.add_parser('stop', help='Stop a server')
+    parser_stop.add_argument('server_id', help='Server ID to stop')
+    parser_stop.set_defaults(func=cmd_stop)
+    
+    # Status command
+    parser_status = subparsers.add_parser('status', help='Show server status')
+    parser_status.add_argument('server_id', help='Server ID')
+    parser_status.set_defaults(func=cmd_status)
+    
+    # Console command
+    parser_console = subparsers.add_parser('console', help='View server console output')
+    parser_console.add_argument('server_id', help='Server ID')
+    parser_console.add_argument('-n', '--lines', type=int, default=50,
+                               help='Number of lines to show (default: 50)')
+    parser_console.set_defaults(func=cmd_console)
+    
+    # Backup command
+    parser_backup = subparsers.add_parser('backup', help='Create a server backup')
+    parser_backup.add_argument('server_id', help='Server ID to backup')
+    parser_backup.set_defaults(func=cmd_backup)
+    
+    # Backups command
+    parser_backups = subparsers.add_parser('backups', help='List backups')
+    parser_backups.add_argument('server_id', nargs='?', help='Server ID (optional)')
+    parser_backups.set_defaults(func=cmd_backups)
+    
+    args = parser.parse_args()
+    
+    if not args.command:
+        parser.print_help()
+        return 1
+    
+    # Initialize manager
+    manager = ServerManager(args.config)
+    
+    # Execute command
+    return args.func(args, manager)
+
+
+if __name__ == '__main__':
+    sys.exit(main())

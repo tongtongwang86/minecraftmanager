@@ -1,0 +1,16 @@
+{
+  "servers_dir": "./servers",
+  "backups_dir": "./backups",
+  "web_port": 5000,
+  "web_host": "127.0.0.1",
+  "servers": {
+    "example": {
+      "name": "Example Server",
+      "path": "./servers/example",
+      "jar": "server.jar",
+      "memory": "2G",
+      "port": 25565,
+      "autostart": false
+    }
+  }
+}

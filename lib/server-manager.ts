@@ -199,26 +199,7 @@ export class ServerManager {
       try {
         process.kill(pid, 'SIGTERM');
 
-        // Wait up to 30 seconds for graceful shutdown
-        let attempts = 0;
-        const checkInterval = setInterval(() => {
-          try {
-            process.kill(pid, 0); // Check if process exists
-            attempts++;
-            if (attempts >= 30) {
-              clearInterval(checkInterval);
-              // Force kill if still running
-              try {
-                process.kill(pid, 'SIGKILL');
-              } catch {}
-            }
-          } catch {
-            // Process no longer exists
-            clearInterval(checkInterval);
-          }
-        }, 1000);
-
-        // Clean up immediately for the response
+        // Clean up PID file after giving the server time to shut down
         setTimeout(() => {
           if (fs.existsSync(pidFile)) {
             fs.unlinkSync(pidFile);

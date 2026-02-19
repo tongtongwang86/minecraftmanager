@@ -5,12 +5,62 @@ Flask-based web UI for managing Minecraft servers
 """
 
 from flask import Flask, render_template, jsonify, request, send_from_directory
+from flask_cors import CORS
 from server_manager import ServerManager
 import os
+import psutil
+import threading
+import time
+from collections import deque
 from pathlib import Path
 
 app = Flask(__name__)
+CORS(app)
 manager = ServerManager()
+
+# Metrics history: last 60 data points (~5 min at 5s interval)
+METRICS_HISTORY_LEN = 60
+system_metrics_history = deque(maxlen=METRICS_HISTORY_LEN)
+server_metrics_history = {}  # server_id -> deque of {ts, cpu, mem_mb}
+_metrics_lock = threading.Lock()
+
+
+def _collect_metrics():
+    """Background thread that samples system and per-server metrics every 5 s."""
+    # Prime the CPU percent counter (first call always returns 0.0)
+    psutil.cpu_percent(interval=None)
+    while True:
+        time.sleep(5)
+        ts = int(time.time() * 1000)
+        cpu = psutil.cpu_percent(interval=None)
+        ram = psutil.virtual_memory()
+        point = {
+            'ts': ts,
+            'cpu_percent': cpu,
+            'ram_used_mb': round(ram.used / 1024 / 1024, 1),
+            'ram_total_mb': round(ram.total / 1024 / 1024, 1),
+            'ram_percent': ram.percent,
+        }
+        with _metrics_lock:
+            system_metrics_history.append(point)
+
+            for server_id in manager.get_servers():
+                status = manager.get_server_status(server_id)
+                if status and status.get('running'):
+                    sp = {
+                        'ts': ts,
+                        'cpu_percent': status.get('cpu_percent', 0),
+                        'mem_mb': round(status.get('memory_mb', 0), 1),
+                    }
+                else:
+                    sp = {'ts': ts, 'cpu_percent': 0, 'mem_mb': 0}
+                if server_id not in server_metrics_history:
+                    server_metrics_history[server_id] = deque(maxlen=METRICS_HISTORY_LEN)
+                server_metrics_history[server_id].append(sp)
+
+
+_metrics_thread = threading.Thread(target=_collect_metrics, daemon=True)
+_metrics_thread.start()
 
 # Load configuration
 config = manager.load_config()
@@ -103,6 +153,23 @@ def api_backups():
     backups = manager.list_backups(server_id)
     
     return jsonify(backups)
+
+
+@app.route('/api/metrics/system')
+def api_system_metrics():
+    """Get system-level CPU and RAM metrics history"""
+    with _metrics_lock:
+        return jsonify(list(system_metrics_history))
+
+
+@app.route('/api/servers/<server_id>/metrics')
+def api_server_metrics(server_id):
+    """Get per-server CPU and RAM metrics history"""
+    if not manager.get_server(server_id):
+        return jsonify({'error': 'Server not found'}), 404
+    with _metrics_lock:
+        history = list(server_metrics_history.get(server_id, []))
+    return jsonify(history)
 
 
 def main():

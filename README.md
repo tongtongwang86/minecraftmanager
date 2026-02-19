@@ -13,7 +13,8 @@ A comprehensive Linux tool for managing Minecraft servers with both CLI and web 
 
 ## Requirements
 
-- Python 3.6 or higher
+- Node.js 18 or higher
+- npm (Node Package Manager)
 - Java (for running Minecraft servers)
 - Linux operating system
 
@@ -25,9 +26,9 @@ git clone https://github.com/tongtongwang86/minecraftmanager.git
 cd minecraftmanager
 ```
 
-2. Install Python dependencies:
+2. Install dependencies:
 ```bash
-pip install -r requirements.txt
+npm install
 ```
 
 3. Create your configuration file:
@@ -59,12 +60,18 @@ cp config.example.json config.json
 
 ### Web Interface
 
-Start the web interface:
+Start the web interface in development mode:
 ```bash
-python3 web.py
+npm run dev
 ```
 
-Then open your browser to `http://localhost:5000`
+Or build and start in production mode:
+```bash
+npm run build
+npm start
+```
+
+Then open your browser to `http://localhost:3000`
 
 The web interface provides:
 - Real-time server status monitoring
@@ -75,43 +82,43 @@ The web interface provides:
 
 ### CLI Tool
 
-The CLI tool (`mcm`) provides command-line access to all features:
+The CLI tool (`mcm.js`) provides command-line access to all features:
 
 #### List all servers:
 ```bash
-./mcm list
+node mcm.js list
 ```
 
 #### Start a server:
 ```bash
-./mcm start <server_id>
+node mcm.js start <server_id>
 ```
 
 #### Stop a server:
 ```bash
-./mcm stop <server_id>
+node mcm.js stop <server_id>
 ```
 
 #### View server status:
 ```bash
-./mcm status <server_id>
+node mcm.js status <server_id>
 ```
 
 #### View console output:
 ```bash
-./mcm console <server_id>
-./mcm console <server_id> -n 100  # Show last 100 lines
+node mcm.js console <server_id>
+node mcm.js console <server_id> -n 100  # Show last 100 lines
 ```
 
 #### Create a backup:
 ```bash
-./mcm backup <server_id>
+node mcm.js backup <server_id>
 ```
 
 #### List backups:
 ```bash
-./mcm backups
-./mcm backups <server_id>  # Filter by server
+node mcm.js backups
+node mcm.js backups <server_id>  # Filter by server
 ```
 
 ## Configuration
@@ -120,8 +127,6 @@ The `config.json` file contains all settings:
 
 - **servers_dir**: Directory where server files are stored
 - **backups_dir**: Directory where backups are stored
-- **web_port**: Port for the web interface (default: 5000)
-- **web_host**: Host for the web interface (default: 0.0.0.0)
 - **servers**: Dictionary of server configurations
 
 Each server configuration includes:
@@ -158,20 +163,24 @@ echo "eula=true" > eula.txt
 
 The project consists of three main components:
 
-1. **server_manager.py**: Core server management logic
+1. **lib/server-manager.ts**: Core server management logic (TypeScript/ES Modules)
    - Server lifecycle management (start/stop)
    - Status monitoring
    - Backup operations
    - Console output capture
 
-2. **mcm**: Command-line interface
-   - Built with argparse for easy command handling
-   - Formatted output using tabulate
+2. **lib/server-manager-cli.js**: Core server management logic (CommonJS for CLI)
+   - Same functionality as TypeScript version but in CommonJS for Node.js CLI
+
+3. **mcm.js**: Command-line interface
+   - Built with Commander.js for easy command handling
+   - Formatted table output
    - Full access to all server management features
 
-3. **web.py**: Flask-based web interface
-   - RESTful API endpoints
-   - Modern, responsive UI
+4. **app/**: Next.js web application
+   - **app/api/**: API routes for server operations
+   - **app/page.tsx**: Main React UI component
+   - Modern, responsive UI with Tailwind CSS
    - Real-time updates
    - Live console viewing
 
@@ -179,21 +188,38 @@ The project consists of three main components:
 
 ```
 minecraftmanager/
-├── server_manager.py      # Core server management module
-├── mcm                    # CLI tool (executable)
-├── web.py                 # Web interface (executable)
-├── templates/
-│   └── index.html        # Web UI template
-├── config.json           # Configuration file
-├── config.example.json   # Example configuration
-├── requirements.txt      # Python dependencies
-├── servers/              # Server directories (created automatically)
-└── backups/              # Backup storage (created automatically)
+├── lib/
+│   ├── server-manager.ts       # Core module (TypeScript/ES Modules)
+│   └── server-manager-cli.js   # Core module (CommonJS for CLI)
+├── app/
+│   ├── api/                    # Next.js API routes
+│   │   ├── servers/
+│   │   │   ├── route.ts        # List servers
+│   │   │   └── [serverId]/
+│   │   │       ├── route.ts    # Server details
+│   │   │       ├── start/
+│   │   │       ├── stop/
+│   │   │       ├── console/
+│   │   │       └── backup/
+│   │   └── backups/
+│   │       └── route.ts        # List backups
+│   ├── page.tsx                # Main UI page
+│   ├── layout.tsx              # Root layout
+│   └── globals.css             # Global styles
+├── mcm.js                      # CLI tool (executable)
+├── next.config.ts              # Next.js configuration
+├── tailwind.config.js          # Tailwind CSS configuration
+├── tsconfig.json               # TypeScript configuration
+├── package.json                # Node.js dependencies
+├── config.json                 # Configuration file
+├── config.example.json         # Example configuration
+├── servers/                    # Server directories (created automatically)
+└── backups/                    # Backup storage (created automatically)
 ```
 
 ## Security Notes
 
-- The web interface binds to 127.0.0.1 (localhost) by default for security. To allow remote access, change `web_host` to `0.0.0.0` in config.json and ensure you have proper firewall rules in place
+- The web interface binds to localhost (127.0.0.1) by default for security. To allow remote access, you can configure Next.js to bind to 0.0.0.0 and ensure you have proper firewall rules in place
 - Server console logs may contain sensitive information
 - Backup files are stored locally and are not encrypted
 - Consider using a reverse proxy (nginx/apache) with authentication for production deployments
@@ -207,13 +233,13 @@ minecraftmanager/
 - Check server logs in the server directory
 
 ### Web interface not accessible
-- Ensure port 5000 is not blocked by firewall
-- Check that no other service is using port 5000
-- Verify Flask is installed: `pip list | grep Flask`
+- Ensure port 3000 is not blocked by firewall
+- Check that no other service is using port 3000
+- Verify Node.js and dependencies are installed: `npm list`
 
 ### CLI tool not executable
 ```bash
-chmod +x mcm
+chmod +x mcm.js
 ```
 
 ## Contributing

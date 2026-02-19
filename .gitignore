@@ -1,4 +1,4 @@
-# Python
+# Python (legacy - keeping for reference)
 __pycache__/
 *.py[cod]
 *$py.class
@@ -10,7 +10,6 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
 lib64/
 parts/
 sdist/
@@ -20,10 +19,17 @@ wheels/
 .installed.cfg
 *.egg
 
-# Virtual Environment
+# Virtual Environment (legacy - keeping for reference)
 venv/
 ENV/
 env/
+
+# Next.js
+.next/
+out/
+node_modules/
+*.tsbuildinfo
+next-env.d.ts
 
 # IDE
 .vscode/
@@ -41,3 +47,4 @@ backups/
 
 # Config
 config.json
+

@@ -45,6 +45,7 @@ logs/
 servers/
 backups/
 
-# Config
-config.json
+# Rust
+/mc-node-agent/target/
+
 

@@ -1,35 +1,8 @@
-# Python (legacy - keeping for reference)
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
 
 # Virtual Environment (legacy - keeping for reference)
 venv/
 ENV/
 env/
-
-# Next.js
-.next/
-out/
-node_modules/
-*.tsbuildinfo
-next-env.d.ts
 
 # IDE
 .vscode/
@@ -41,11 +14,14 @@ next-env.d.ts
 *.log
 logs/
 
+# Rust
+/target/
+
 # Server data
 servers/
 backups/
 
-# Rust
-/mc-node-agent/target/
+#config
+config.json
 
 

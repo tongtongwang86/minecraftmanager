@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minecraft Server Manager</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <header>
+        <h1>Minecraft Server Manager</h1>
+    </header>
+    
+    <main>
+        <section id="server-list-section">
+            <h2>Servers</h2>
+            <button id="btn-refresh">Refresh List</button>
+            <button id="btn-new-server">New Server</button>
+            <div id="server-list"></div>
+        </section>
+
+        <section id="server-details-section" style="display: none;">
+            <div class="header-actions">
+                <h2 id="detail-title">Server Details</h2>
+                <button id="btn-back">Back to List</button>
+            </div>
+            
+            <div class="controls">
+                <button id="btn-start" class="btn-success">Start</button>
+                <button id="btn-stop" class="btn-danger">Stop</button>
+                <button id="btn-restart" class="btn-warning">Restart</button>
+                <button id="btn-edit">Edit Config</button>
+                <button id="btn-delete" class="btn-danger">Delete</button>
+            </div>
+
+            <div class="metrics-container">
+                <div class="chart-box">
+                    <canvas id="cpuChart"></canvas>
+                </div>
+                <div class="chart-box">
+                    <canvas id="memChart"></canvas>
+                </div>
+            </div>
+
+            <div class="console-container">
+                <h3>Console</h3>
+                <div id="console-output"></div>
+                <div class="console-input-box">
+                    <input type="text" id="console-input" placeholder="Enter command...">
+                    <button id="btn-send-cmd">Send</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Modal for Create/Edit Server -->
+        <div id="server-modal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2 id="modal-title">Add Server</h2>
+                <form id="server-form">
+                    <div class="form-group">
+                        <label for="server-id">ID (unique):</label>
+                        <input type="text" id="server-id" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="server-name">Name:</label>
+                        <input type="text" id="server-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="server-dir">Directory:</label>
+                        <input type="text" id="server-dir" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="server-jar">Jar File:</label>
+                        <input type="text" id="server-jar" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="server-mem">Memory (MB):</label>
+                        <input type="number" id="server-mem" min="512" max="32768" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="server-port">Port:</label>
+                        <input type="number" id="server-port" min="1024" max="65535" required>
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="server-autostart">
+                        <label for="server-autostart">Autostart</label>
+                    </div>
+                    <button type="submit" class="btn-primary">Save</button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>

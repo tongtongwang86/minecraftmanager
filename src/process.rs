@@ -7,6 +7,25 @@ use sysinfo::{Pid, System};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::sync::{broadcast, Mutex};
 
+pub async fn kill_orphaned_servers(config: &crate::config::Config) {
+    let sys = System::new_all();
+    for server in &config.servers {
+        for (pid, process) in sys.processes() {
+            let cmd = process.cmd();
+            if cmd.iter().any(|c| c.contains("java")) && cmd.iter().any(|c| c.contains(&server.jar)) {
+                if let Some(cwd) = process.cwd() {
+                    if cwd.to_string_lossy() == server.directory {
+                        tracing::warn!("Found orphaned server '{}' (PID {}), killing it...", server.id, pid);
+                        process.kill();
+                    }
+                }
+            }
+        }
+    }
+    // Give them a moment to exit
+    tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+}
+
 pub async fn start_server(state: AppState, server_id: &str) -> Result<(), String> {
     if state.servers.contains_key(server_id) {
         return Err(format!("Server '{}' is already running", server_id));
@@ -54,7 +73,6 @@ pub async fn start_server(state: AppState, server_id: &str) -> Result<(), String
     let (console_tx, _) = broadcast::channel(256);
 
     let instance = Arc::new(ServerInstance {
-        id: server_id.to_string(),
         pid,
         child: Mutex::new(child),
         stdin: Mutex::new(stdin),

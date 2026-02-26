@@ -12,7 +12,6 @@ pub struct Metrics {
 }
 
 pub struct ServerInstance {
-    pub id: String,
     pub pid: u32,
     pub child: Mutex<tokio::process::Child>,
     pub stdin: Mutex<tokio::process::ChildStdin>,

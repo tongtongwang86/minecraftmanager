@@ -2,8 +2,8 @@ use anyhow::Context;
 use serde::{Deserialize, Serialize};
 use tokio::io::AsyncWriteExt;
 
-pub const CONFIG_PATH: &str = "/config/config.json";
-pub const CONFIG_TMP_PATH: &str = "/config/config.json.tmp";
+pub const CONFIG_PATH: &str = "config.json";
+pub const CONFIG_TMP_PATH: &str = "config.json.tmp";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AgentConfig {
@@ -55,6 +55,10 @@ pub async fn load_config() -> anyhow::Result<Config> {
 }
 
 pub async fn save_config(config: &Config) -> anyhow::Result<()> {
+    if let Some(parent) = std::path::Path::new(CONFIG_TMP_PATH).parent() {
+        tokio::fs::create_dir_all(parent).await.context("Failed to create config directory")?;
+    }
+
     let json = serde_json::to_string_pretty(config).context("Failed to serialize config")?;
     let mut file = tokio::fs::File::create(CONFIG_TMP_PATH)
         .await

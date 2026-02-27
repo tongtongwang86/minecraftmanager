@@ -30,6 +30,7 @@ function setupEventListeners() {
     document.getElementById('btn-start').addEventListener('click', () => serverAction('start'));
     document.getElementById('btn-stop').addEventListener('click', () => serverAction('stop'));
     document.getElementById('btn-restart').addEventListener('click', () => serverAction('restart'));
+    document.getElementById('btn-backup').addEventListener('click', () => serverAction('backup'));
     document.getElementById('btn-delete').addEventListener('click', deleteServer);
     document.getElementById('btn-edit').addEventListener('click', () => openModal(currentServerId));
 
@@ -249,6 +250,7 @@ async function openModal(id = null) {
                 document.getElementById('server-jar').value = server.jar;
                 document.getElementById('server-mem').value = server.memory_mb;
                 document.getElementById('server-port').value = server.port;
+                document.getElementById('server-backup-dir').value = server.backup_directory || '';
                 document.getElementById('server-autostart').checked = server.autostart;
             }
         } catch (err) {
@@ -268,6 +270,7 @@ function closeModal() {
 async function handleServerSubmit(e) {
     e.preventDefault();
     
+    const backupDir = document.getElementById('server-backup-dir').value.trim();
     const serverData = {
         id: document.getElementById('server-id').value,
         name: document.getElementById('server-name').value,
@@ -275,6 +278,7 @@ async function handleServerSubmit(e) {
         jar: document.getElementById('server-jar').value,
         memory_mb: parseInt(document.getElementById('server-mem').value),
         port: parseInt(document.getElementById('server-port').value),
+        backup_directory: backupDir ? backupDir : null,
         autostart: document.getElementById('server-autostart').checked
     };
 

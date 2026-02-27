@@ -12,7 +12,7 @@ use tokio::io::AsyncWriteExt;
 
 use crate::{
     config::{save_config, validate_server_config, ServerConfig},
-    process::{restart_server, start_server, stop_server},
+    process::{restart_server, start_server, stop_server, backup_server},
     state::AppState,
 };
 
@@ -180,7 +180,15 @@ pub async fn restart_server_handler(
         Err(e) => err_response(StatusCode::BAD_REQUEST, e).into_response(),
     }
 }
-
+pub async fn backup_server_handler(
+    Path(id): Path<String>,
+    State(state): State<AppState>,
+) -> impl IntoResponse {
+    match backup_server(state, &id).await {
+        Ok(_) => StatusCode::OK.into_response(),
+        Err(e) => err_response(StatusCode::INTERNAL_SERVER_ERROR, e).into_response(),
+    }
+}
 pub async fn console_ws(
     ws: WebSocketUpgrade,
     Path(id): Path<String>,

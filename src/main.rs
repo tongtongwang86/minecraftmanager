@@ -47,6 +47,7 @@ async fn main() -> anyhow::Result<()> {
         .route("/api/servers/{id}/start", post(api::start_server_handler))
         .route("/api/servers/{id}/stop", post(api::stop_server_handler))
         .route("/api/servers/{id}/restart", post(api::restart_server_handler))
+        .route("/api/servers/{id}/backup", post(api::backup_server_handler))
         .route("/api/servers/{id}/console/ws", get(api::console_ws))
         .route("/api/servers/{id}/metrics/ws", get(api::metrics_ws))
         .layer(CorsLayer::permissive())

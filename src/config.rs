@@ -29,6 +29,8 @@ pub struct ServerConfig {
     pub memory_mb: u32,
     pub port: u16,
     pub autostart: bool,
+    #[serde(default)]
+    pub backup_directory: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -100,6 +102,11 @@ pub fn validate_server_config(cfg: &ServerConfig) -> Result<(), String> {
     }
     if !std::path::Path::new(&cfg.directory).exists() {
         return Err(format!("directory '{}' does not exist", cfg.directory));
+    }
+    if let Some(ref backup_dir) = cfg.backup_directory {
+        if backup_dir.contains("..") {
+            return Err("backup_directory must not contain '..'".to_string());
+        }
     }
     Ok(())
 }

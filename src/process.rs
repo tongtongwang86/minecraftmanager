@@ -265,3 +265,50 @@ pub async fn restart_server(state: AppState, server_id: &str) -> Result<(), Stri
     }
     start_server(state, server_id).await
 }
+
+pub async fn backup_server(state: AppState, server_id: &str) -> Result<(), String> {
+    let server_cfg = {
+        let config = state.config.read().await;
+        config
+            .servers
+            .iter()
+            .find(|s| s.id == server_id)
+            .cloned()
+            .ok_or_else(|| format!("Server '{}' not found in config", server_id))?
+    };
+
+    let backup_dir = server_cfg
+        .backup_directory
+        .as_ref()
+        .ok_or_else(|| format!("Backup directory not configured for server '{}'", server_id))?;
+
+    // Ensure backup directory exists
+    tokio::fs::create_dir_all(backup_dir)
+        .await
+        .map_err(|e| format!("Failed to create backup directory: {}", e))?;
+
+    let timestamp = chrono::Local::now().format("%Y-%m-%d_%H-%M-%S").to_string();
+    let backup_filename = format!("{}_{}.tar.gz", server_id, timestamp);
+    let backup_path = std::path::Path::new(backup_dir).join(&backup_filename);
+
+    // Run tar command
+    let mut cmd = tokio::process::Command::new("tar");
+    cmd.arg("-czf")
+        .arg(&backup_path)
+        .arg("-C")
+        .arg(&server_cfg.directory)
+        .arg(".");
+
+    let output = cmd
+        .output()
+        .await
+        .map_err(|e| format!("Failed to execute tar command: {}", e))?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(format!("Tar command failed: {}", stderr));
+    }
+
+    tracing::info!("Created backup for server '{}' at {:?}", server_id, backup_path);
+    Ok(())
+}

@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Minecraft Server Manager</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Fira+Code&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <noscript>
@@ -11,30 +14,35 @@
     </noscript>
 </head>
 <body>
-    <div id="auth-loading" style="text-align: center; padding: 50px; font-size: 18px; color: #666;">
+    <div id="auth-loading">
+        <div class="spinner"></div>
         <p>Checking authentication...</p>
-        <p style="font-size: 14px; color: #999; margin-top: 20px;">If you are not redirected, <a href="/login.html">click here</a>.</p>
+        <p style="font-size: 0.875rem; color: var(--text-muted); margin-top: 1rem;">If you are not redirected, <a href="/login.html" style="color: var(--primary);">click here</a>.</p>
     </div>
     
     <header id="app-header" style="display: none;">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div class="header-content">
             <h1>Minecraft Server Manager</h1>
-            <button id="btn-logout" class="btn-danger" style="background-color: #95a5a6;">Logout</button>
+            <button id="btn-logout" class="btn-secondary">Logout</button>
         </div>
     </header>
     
     <main id="app-content" style="display: none;">
         <section id="server-list-section">
-            <h2>Servers</h2>
-            <button id="btn-refresh">Refresh List</button>
-            <button id="btn-new-server">New Server</button>
+            <div class="header-actions">
+                <h2>Servers</h2>
+                <div>
+                    <button id="btn-refresh" class="btn-secondary">Refresh List</button>
+                    <button id="btn-new-server" class="btn-primary">New Server</button>
+                </div>
+            </div>
             <div id="server-list"></div>
         </section>
 
         <section id="server-details-section" style="display: none;">
             <div class="header-actions">
                 <h2 id="detail-title">Server Details</h2>
-                <button id="btn-back">Back to List</button>
+                <button id="btn-back" class="btn-secondary">&larr; Back to List</button>
             </div>
             
             <div class="controls">
@@ -42,7 +50,7 @@
                 <button id="btn-stop" class="btn-danger">Stop</button>
                 <button id="btn-restart" class="btn-warning">Restart</button>
                 <button id="btn-backup" class="btn-primary">Backup</button>
-                <button id="btn-edit">Edit Config</button>
+                <button id="btn-edit" class="btn-secondary">Edit Config</button>
                 <button id="btn-delete" class="btn-danger">Delete</button>
             </div>
 
@@ -59,8 +67,8 @@
                 <h3>Console</h3>
                 <div id="console-output"></div>
                 <div class="console-input-box">
-                    <input type="text" id="console-input" placeholder="Enter command...">
-                    <button id="btn-send-cmd">Send</button>
+                    <input type="text" id="console-input" placeholder="Enter command (e.g., tp User1 ~ ~ ~)...">
+                    <button id="btn-send-cmd" class="btn-primary">Send</button>
                 </div>
             </div>
         </section>
@@ -72,38 +80,38 @@
                 <h2 id="modal-title">Add Server</h2>
                 <form id="server-form">
                     <div class="form-group">
-                        <label for="server-id">ID (unique):</label>
-                        <input type="text" id="server-id" required>
+                        <label for="server-id">ID (unique URL-friendly):</label>
+                        <input type="text" id="server-id" placeholder="e.g. survival-smp" required>
                     </div>
                     <div class="form-group">
-                        <label for="server-name">Name:</label>
-                        <input type="text" id="server-name" required>
+                        <label for="server-name">Display Name:</label>
+                        <input type="text" id="server-name" placeholder="e.g. Survival SMP" required>
                     </div>
                     <div class="form-group">
-                        <label for="server-dir">Directory:</label>
-                        <input type="text" id="server-dir" required>
+                        <label for="server-dir">Directory Path:</label>
+                        <input type="text" id="server-dir" placeholder="e.g. ./servers/survival" required>
                     </div>
                     <div class="form-group">
-                        <label for="server-jar">Jar File:</label>
-                        <input type="text" id="server-jar" required>
+                        <label for="server-jar">Jar File Name:</label>
+                        <input type="text" id="server-jar" placeholder="e.g. server.jar" required>
                     </div>
                     <div class="form-group">
                         <label for="server-mem">Memory (MB):</label>
-                        <input type="number" id="server-mem" min="512" max="32768" required>
+                        <input type="number" id="server-mem" min="512" max="65536" placeholder="e.g. 4096" required>
                     </div>
                     <div class="form-group">
                         <label for="server-port">Port:</label>
-                        <input type="number" id="server-port" min="1024" max="65535" required>
+                        <input type="number" id="server-port" min="1024" max="65535" placeholder="e.g. 25565" required>
                     </div>
                     <div class="form-group">
                         <label for="server-backup-dir">Backup Directory (optional):</label>
-                        <input type="text" id="server-backup-dir">
+                        <input type="text" id="server-backup-dir" placeholder="e.g. ./backups/survival">
                     </div>
                     <div class="form-group checkbox-group">
                         <input type="checkbox" id="server-autostart">
-                        <label for="server-autostart">Autostart</label>
+                        <label for="server-autostart">Autostart on boot</label>
                     </div>
-                    <button type="submit" class="btn-primary">Save</button>
+                    <button type="submit" class="btn-primary" style="width: 100%; margin: 1rem 0 0 0;">Save Server</button>
                 </form>
             </div>
         </div>

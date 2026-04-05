@@ -16,16 +16,113 @@ const modal = document.getElementById('server-modal');
 const serverForm = document.getElementById('server-form');
 
 // Initialize
-document.addEventListener('DOMContentLoaded', () => {
-    loadServers();
-    setupEventListeners();
-    initCharts();
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('App initializing...');
+    
+    // Set a timeout as a fallback redirect
+    const redirectTimeout = setTimeout(() => {
+        console.log('Timeout reached, forcing redirect to login...');
+        window.location.href = '/login.html';
+    }, 5000); // 5 second fallback
+    
+    try {
+        // Check authentication first
+        const isAuthenticated = await checkAuth();
+        console.log('Authentication check result:', isAuthenticated);
+        
+        // Hide loading message
+        const loadingDiv = document.getElementById('auth-loading');
+        if (loadingDiv) {
+            loadingDiv.style.display = 'none';
+        }
+        
+        if (!isAuthenticated) {
+            // Clear timeout since we're handling redirect
+            clearTimeout(redirectTimeout);
+            // Redirect to login page
+            console.log('Not authenticated, redirecting to login...');
+            window.location.href = '/login.html';
+            return;
+        }
+        
+        // Clear timeout since we're authenticated
+        clearTimeout(redirectTimeout);
+        console.log('Authenticated! Showing app...');
+        
+        // Show the app content only after authentication is verified
+        const appHeader = document.getElementById('app-header');
+        const appContent = document.getElementById('app-content');
+        if (appHeader) {
+            appHeader.style.display = 'block';
+        }
+        if (appContent) {
+            appContent.style.display = 'block';
+        }
+        
+        loadServers();
+        setupEventListeners();
+        initCharts();
+    } catch (error) {
+        console.error('Fatal error during initialization:', error);
+        // On any error, redirect to login
+        clearTimeout(redirectTimeout);
+        window.location.href = '/login.html';
+    }
 });
+
+// Check if user is authenticated
+async function checkAuth() {
+    try {
+        const response = await fetch('/api/auth/status', {
+            credentials: 'same-origin'
+        });
+        
+        // If we get a 401, definitely not authenticated
+        if (response.status === 401) {
+            return false;
+        }
+        
+        // If we get a 200, check the body
+        if (response.ok) {
+            const data = await response.json();
+            return data.authenticated === true;
+        }
+        
+        // Any other status, assume not authenticated
+        return false;
+    } catch (error) {
+        console.error('Auth check error:', error);
+        // On error, assume not authenticated
+        return false;
+    }
+}
+
+// Logout function
+async function logout() {
+    try {
+        await fetch('/api/auth/logout', { method: 'POST' });
+        window.location.href = '/login.html';
+    } catch (error) {
+        console.error('Logout error:', error);
+        window.location.href = '/login.html';
+    }
+}
+
+// Enhanced fetch with auth error handling
+async function authFetch(url, options = {}) {
+    const response = await fetch(url, options);
+    if (response.status === 401) {
+        window.location.href = '/login.html';
+        throw new Error('Unauthorized');
+    }
+    return response;
+}
 
 function setupEventListeners() {
     document.getElementById('btn-refresh').addEventListener('click', loadServers);
     document.getElementById('btn-back').addEventListener('click', showServerList);
     document.getElementById('btn-new-server').addEventListener('click', () => openModal());
+    document.getElementById('btn-logout').addEventListener('click', logout);
     
     document.getElementById('btn-start').addEventListener('click', () => serverAction('start'));
     document.getElementById('btn-stop').addEventListener('click', () => serverAction('stop'));
@@ -49,12 +146,14 @@ function setupEventListeners() {
 
 async function loadServers() {
     try {
-        const res = await fetch(API_BASE);
+        const res = await authFetch(API_BASE);
         const servers = await res.json();
         renderServerList(servers);
     } catch (err) {
         console.error('Failed to load servers:', err);
-        alert('Failed to load servers');
+        if (err.message !== 'Unauthorized') {
+            alert('Failed to load servers');
+        }
     }
 }
 
@@ -99,20 +198,23 @@ function showServerDetails(server) {
 async function serverAction(action) {
     if (!currentServerId) return;
     try {
-        const res = await fetch(`${API_BASE}/${currentServerId}/${action}`, { method: 'POST' });
+        const res = await authFetch(`${API_BASE}/${currentServerId}/${action}`, { method: 'POST' });
         if (!res.ok) {
             const err = await res.json();
             alert(`Failed to ${action}: ${err.error}`);
         }
     } catch (err) {
         console.error(`Failed to ${action}:`, err);
+        if (err.message !== 'Unauthorized') {
+            alert(`Failed to ${action}`);
+        }
     }
 }
 
 async function deleteServer() {
     if (!currentServerId || !confirm('Are you sure you want to delete this server?')) return;
     try {
-        const res = await fetch(`${API_BASE}/${currentServerId}`, { method: 'DELETE' });
+        const res = await authFetch(`${API_BASE}/${currentServerId}`, { method: 'DELETE' });
         if (res.ok) {
             showServerList();
         } else {
@@ -121,6 +223,9 @@ async function deleteServer() {
         }
     } catch (err) {
         console.error('Failed to delete:', err);
+        if (err.message !== 'Unauthorized') {
+            alert('Failed to delete server');
+        }
     }
 }
 
@@ -240,7 +345,7 @@ async function openModal(id = null) {
     
     if (isEditing) {
         try {
-            const res = await fetch(API_BASE);
+            const res = await authFetch(API_BASE);
             const servers = await res.json();
             const server = servers.find(s => s.id === id);
             if (server) {
@@ -255,6 +360,9 @@ async function openModal(id = null) {
             }
         } catch (err) {
             console.error('Failed to load server details:', err);
+            if (err.message !== 'Unauthorized') {
+                alert('Failed to load server details');
+            }
         }
     } else {
         serverForm.reset();
@@ -286,7 +394,7 @@ async function handleServerSubmit(e) {
         const url = isEditing ? `${API_BASE}/${serverData.id}` : API_BASE;
         const method = isEditing ? 'PUT' : 'POST';
         
-        const res = await fetch(url, {
+        const res = await authFetch(url, {
             method,
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(serverData)

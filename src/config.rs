@@ -9,6 +9,19 @@ pub const CONFIG_TMP_PATH: &str = "config.json.tmp";
 pub struct AgentConfig {
     pub bind_address: String,
     pub data_directory: String,
+    pub password_hash: String,
+    #[serde(default = "default_session_timeout")]
+    pub session_timeout_hours: u64,
+    #[serde(default = "default_max_login_attempts")]
+    pub max_login_attempts: u32,
+}
+
+fn default_session_timeout() -> u64 {
+    24
+}
+
+fn default_max_login_attempts() -> u32 {
+    5
 }
 
 impl Default for AgentConfig {
@@ -16,6 +29,9 @@ impl Default for AgentConfig {
         Self {
             bind_address: "0.0.0.0:8080".to_string(),
             data_directory: "/servers".to_string(),
+            password_hash: String::new(),
+            session_timeout_hours: 24,
+            max_login_attempts: 5,
         }
     }
 }
@@ -46,6 +62,7 @@ pub async fn load_config() -> anyhow::Result<Config> {
         Ok(contents) => {
             let config: Config = serde_json::from_str(&contents)
                 .context("Failed to parse config.json")?;
+            validate_agent_config(&config.agent)?;
             Ok(config)
         }
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
@@ -54,6 +71,19 @@ pub async fn load_config() -> anyhow::Result<Config> {
         }
         Err(e) => Err(e).context("Failed to read config.json"),
     }
+}
+
+pub fn validate_agent_config(cfg: &AgentConfig) -> anyhow::Result<()> {
+    if cfg.password_hash.is_empty() {
+        anyhow::bail!("password_hash must not be empty. Generate one with: cargo run --bin hash_password <password>");
+    }
+    if !cfg.password_hash.starts_with("$2b$") && !cfg.password_hash.starts_with("$2a$") && !cfg.password_hash.starts_with("$2y$") {
+        anyhow::bail!("password_hash must be a bcrypt hash (should start with $2b$, $2a$, or $2y$)");
+    }
+    if cfg.session_timeout_hours == 0 {
+        anyhow::bail!("session_timeout_hours must be greater than 0");
+    }
+    Ok(())
 }
 
 pub async fn save_config(config: &Config) -> anyhow::Result<()> {

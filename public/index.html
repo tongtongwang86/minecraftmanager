@@ -6,13 +6,24 @@
     <title>Minecraft Server Manager</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <noscript>
+        <meta http-equiv="refresh" content="0; url=/login.html">
+    </noscript>
 </head>
 <body>
-    <header>
-        <h1>Minecraft Server Manager</h1>
+    <div id="auth-loading" style="text-align: center; padding: 50px; font-size: 18px; color: #666;">
+        <p>Checking authentication...</p>
+        <p style="font-size: 14px; color: #999; margin-top: 20px;">If you are not redirected, <a href="/login.html">click here</a>.</p>
+    </div>
+    
+    <header id="app-header" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h1>Minecraft Server Manager</h1>
+            <button id="btn-logout" class="btn-danger" style="background-color: #95a5a6;">Logout</button>
+        </div>
     </header>
     
-    <main>
+    <main id="app-content" style="display: none;">
         <section id="server-list-section">
             <h2>Servers</h2>
             <button id="btn-refresh">Refresh List</button>

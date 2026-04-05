@@ -35,7 +35,7 @@ async fn main() -> anyhow::Result<()> {
     let session_store = MemoryStore::default();
     let session_layer = SessionManagerLayer::new(session_store)
         .with_secure(false) // HTTP only (no HTTPS on LAN)
-        .with_same_site(cookie::SameSite::Strict)
+        .with_same_site(cookie::SameSite::Lax)
         .with_http_only(true)
         .with_expiry(tower_sessions::Expiry::OnInactivity(
             Duration::hours(session_timeout_hours as i64)

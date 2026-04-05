@@ -55,7 +55,7 @@ Edit `config.json`:
 
 ```bash
 cargo build --release
-cargo run --bin mc-node-agent
+cargo run --bin minecraft-manager
 ```
 
 The server will start on `http://0.0.0.0:8080`
